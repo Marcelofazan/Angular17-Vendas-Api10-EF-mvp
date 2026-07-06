@@ -68,17 +68,17 @@ ng serve
 
 Para acessar a aplicação **http://localhost:4200/**
 
-## Estrutura relevante
+- Estrutura relevante
 - `src/app/features/orders` — fluxos de pedidos (criacao/list/details)
 - `src/app/core/interceptors` — interceptors de envelope, erro e `X-Correlation-ID`
 - `src/app/shared/components/feedback-banner` — banner global para mensagens e correlação
 
-
-VSCode Terminal [4]
-## Testes e lint
+#### 🔍 Executar Testes Unitários
 - Validação ESLint
 - Modo interativo com Karma + Jasmine
 - Mesma suíte em modo headless (usada nos scripts `scripts/verify.*`)
+
+VSCode Terminal [4]
 ```bash
 cd Frontend
 npm run lint
