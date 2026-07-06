@@ -40,11 +40,25 @@ dotnet run
 ```
 A API fica disponivel em **http://localhost:5000/scalar/v1**
 
+#### 🔍 Executar Testes Unitários
 VSCode Terminal [2]
 ```bash
 cd Backend
 dotnet test exemploAPIVendas.Testes/exemploAPIVendas.Testes.csproj
 ```
+
+#### ➡️ Fluxo de uma Requisição
+```
+Angular Form
+   └─► HTTP Request          (API)
+        └─► ProductsController
+             └─► CreateProductCommandHandler
+                  └─► ProductRepository
+                       └─► ApplicationDbContex
+                            └─► PostgreSQL 
+                                 └─► Response JSON para Frontend
+```
+
 
 ## 📁 Frontend 
 
@@ -85,19 +99,6 @@ npm run lint
 npm run test
 npm run test:ci
 ```
-
-#### ➡️ Fluxo de uma Requisição
-```
-Angular Form
-   └─► HTTP Request          (API)
-        └─► ProductsController
-             └─► CreateProductCommandHandler
-                  └─► ProductRepository
-                       └─► ApplicationDbContex
-                            └─► PostgreSQL 
-                                 └─► Response JSON para Frontend
-```
-
 
 #### Observabilidade & Correlation ID
 - Cada requisição recebe/propaga `X-Correlation-ID` via middleware ASP.NET Core e interceptor Angular. O header é exibido também no banner de feedback quando erros ocorrem.
