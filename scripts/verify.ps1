@@ -17,24 +17,25 @@ function Invoke-Step {
     Write-Host "[verify] Completed: $Message" -ForegroundColor Green
 }
 
-$repoRoot = Split-Path -Parent $PSCommandPath
+$scriptPath = Split-Path -Parent $PSCommandPath
+$repoRoot = Split-Path -Parent $scriptPath
 
 if (-not $SkipBackendTests) {
-    Invoke-Step -Message "dotnet test (exemploAPIVendas)" -Action {
-        dotnet test "$repoRoot\backend\exemploAPIVendas.sln" --nologo
+    Invoke-Step -Message "dotnet test (Backend)" -Action {
+        dotnet test "$repoRoot\Backend\exemploAPIVendas.sln" --nologo
     }
 }
 
-Push-Location "$repoRoot\frontend"
+Push-Location "$repoRoot\Frontend"
 try {
     if (-not $SkipFrontendLint) {
-        Invoke-Step -Message "npm run lint (frontend)" -Action {
+        Invoke-Step -Message "npm run lint (Frontend)" -Action {
             npm run lint -- --no-progress
         }
     }
 
     if (-not $SkipFrontendTests) {
-        Invoke-Step -Message "npm run test:ci (frontend)" -Action {
+        Invoke-Step -Message "npm run test:ci (Frontend)" -Action {
             npm run test:ci -- --no-progress
         }
     }
