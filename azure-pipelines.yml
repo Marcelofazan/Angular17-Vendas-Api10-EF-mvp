@@ -5,11 +5,11 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  # Paths and versions
   buildConfiguration: 'Release'
-  angularProjectDir: '$(System.DefaultWorkingDirectory)/ClientApp' # Adjust to your Angular folder
-  netProjectDir: '$(System.DefaultWorkingDirectory)/Api'          # Adjust to your .NET folder
-  dotnetVersion: '10.0.x'                                      # Matches .NET 10 requirements
+  # Ajustado para os nomes exatos das suas pastas
+  angularProjectDir: '$(System.DefaultWorkingDirectory)/frontend'
+  netProjectDir: '$(System.DefaultWorkingDirectory)/backend'
+  dotnetVersion: '10.0.x'
 
 stages:
 - stage: Build_Angular
@@ -20,16 +20,23 @@ stages:
     steps:
     - task: NodeTool@0
       inputs:
-        versionSpec: '20.x' # Use a Node version compatible with Angular 17+
+        versionSpec: '20.x'
       displayName: 'Install Node.js'
 
     - script: |
         cd $(angularProjectDir)
-        npm ci
+        
+        # Evita a quebra do pipeline se o package-lock.json não foi enviado ao Git
+        if [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
+        
         npm run build -- --configuration production
       displayName: 'Angular 17 Build'
 
-    - publish: $(angularProjectDir)/dist/browser # For Angular 17+, output typically goes here
+    - publish: $(angularProjectDir)/dist/browser
       artifact: 'angular-dist'
       displayName: 'Publish Angular Artifacts'
 
