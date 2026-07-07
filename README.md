@@ -103,7 +103,7 @@ npm run lint
 npm run test
 npm run test:ci
 ```
-## 📁 scripts 
+## ⚙️ scripts 
 #### 🔍 Executar Testes Unitários
 - Executar Testes script PowerShell
 - 
