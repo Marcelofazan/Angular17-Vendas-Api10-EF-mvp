@@ -1,5 +1,5 @@
 trigger:
-- main  # Ajuste para 'master' se o nome da sua branch principal for master
+- main
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -13,7 +13,7 @@ steps:
 # ================= CONFIGURAÇÃO DE AMBIENTE =================
 - task: UseNode@1
   inputs:
-    version: '20.x' # Node 20 é o ideal e recomendado para Angular 17
+    version: '20.x'
   displayName: 'Ambiente: Instalar Node.js'
 
 - task: UseDotNet@2
@@ -22,7 +22,6 @@ steps:
     packageType: 'sdk'
   displayName: 'Ambiente: Instalar .NET 10 SDK'
 
-# Cache de Dependências do NPM (Apenas para o Frontend Angular)
 - task: Cache@2
   inputs:
     key: 'npm | "$(Agent.OS)" | Frontend/package.json'
@@ -42,37 +41,40 @@ steps:
 
 # ================= PIPELINE DO BACKEND (.NET 10) =================
 - script: |
-    # Busca o caminho absoluto da pasta que contém .sln ou .csproj
+    # Busca o caminho absoluto e garante que não falhe
     NET_PATH=$(find "$(Build.SourcesDirectory)/Backend" -name "*.sln" -o -name "*.csproj" -exec dirname {} \; | head -n 1)
+    if [ -z "$NET_PATH" ]; then NET_PATH="$(Build.SourcesDirectory)/Backend"; fi
     echo "Diretório .NET detectado: $NET_PATH"
     echo "##vso[task.setvariable variable=detectedNetDir]$NET_PATH"
   displayName: 'Backend: Detectar pasta do projeto'
 
 - script: dotnet restore
-  workingDirectory: '$(detectedNetDir)'
+  workingDirectory: $(detectedNetDir)
   displayName: 'Backend: Restaurar pacotes Nuget'
 
 - script: dotnet build --configuration $(buildConfiguration) --no-restore
-  workingDirectory: '$(detectedNetDir)'
+  workingDirectory: $(detectedNetDir)
   displayName: 'Backend: Compilar o projeto .NET'
 
 - script: dotnet test --configuration $(buildConfiguration) --no-build --logger trx
-  workingDirectory: '$(detectedNetDir)'
+  workingDirectory: $(detectedNetDir)
   displayName: 'Backend: Executar testes'
   condition: always()
 
-- script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/ApiPublish --no-build
-  workingDirectory: '$(detectedNetDir)'
+- script: dotnet publish --configuration $(buildConfiguration) --output "$(Build.ArtifactStagingDirectory)/ApiPublish" --no-build
+  workingDirectory: $(detectedNetDir)
   displayName: 'Backend: Publicar para Deploy'
 
 # ================= SALVAR ARTEFATOS PARA DEPLOY =================
 - script: |
-    # Mapeia de forma absoluta onde o Angular 17 gerou o index.html
+    # Mapeia de forma absoluta onde o Angular gerou o index.html
     DIST_TARGET=$(find "$(Build.SourcesDirectory)/Frontend/dist" -name "index.html" -exec dirname {} \; | head -n 1)
+    if [ -z "$DIST_TARGET" ]; then DIST_TARGET="$(Build.SourcesDirectory)/Frontend/dist"; fi
     echo "Diretório Angular Dist detectado: $DIST_TARGET"
     echo "##vso[task.setvariable variable=detectedAngularDist]$DIST_TARGET"
   displayName: 'Mapear Saída do Angular'
 
+# CORREÇÃO: Chamada da variável corrigida para o formato de runtime do Pipeline
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(detectedAngularDist)'
@@ -93,6 +95,6 @@ steps:
     curl -X POST "$(RENDER_FRONTEND_HOOK)"
     echo -e "\nFrontend atualizado."
     curl -X POST "$(RENDER_BACKEND_HOOK)"
-    echo -e "\nBackend atualizado."
+    echo -e "\nBackend updated."
   displayName: 'Render: Disparar Auto-Deploy Webhook'
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
