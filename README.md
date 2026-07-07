@@ -106,7 +106,7 @@ npm run test:ci
 ## ⚙️ scripts 
 #### 🔍 Executar Testes Unitários
 - Executar Testes script PowerShell
-- 
+  
 VSCode Terminal [4]
 ```bash
 cd scripts
