@@ -40,21 +40,20 @@ steps:
   displayName: 'Frontend: Compilar o projeto Angular'
 
 # ================= PIPELINE DO BACKEND (.NET 10) =================
-# CORREÇÃO: Adicionado o Runtime -r win-x64 também no restore para mapear o ambiente do arquivo .exe
+# CORREÇÃO: Removido -r win-x64 da restauração da solução inteira
 - task: DotNetCoreCLI@2
   displayName: 'Backend: Restaurar dependências'
   inputs:
     command: 'restore'
     projects: 'Backend/exemploAPIVendas.slnx'
-    arguments: '-r win-x64'
 
-# CORREÇÃO: Adicionado o Runtime -r win-x64 na compilação da solução
+# CORREÇÃO: Removido -r win-x64 da compilação da solução inteira
 - task: DotNetCoreCLI@2
   displayName: 'Backend: Compilar API'
   inputs:
     command: 'build'
     projects: 'Backend/exemploAPIVendas.slnx'
-    arguments: '--configuration $(buildConfiguration) -r win-x64 --no-restore'
+    arguments: '--configuration $(buildConfiguration)'
 
 - task: DotNetCoreCLI@2
   displayName: 'Backend: Executar testes'
@@ -64,16 +63,16 @@ steps:
     arguments: '--configuration $(buildConfiguration) --no-build'
   condition: always()
 
-# CORREÇÃO: Apontado diretamente para o .csproj da API principal para evitar o conflito de múltiplos outputs e gerar o exemploAPIVendas.exe limpamente
+# MANTIDO: O runtime win-x64 é aplicado exclusivamente no arquivo .csproj do projeto executável final
 - task: DotNetCoreCLI@2
   displayName: 'Backend: Publicar para Deploy'
   inputs:
     command: 'publish'
     publishWebProjects: false
     projects: 'Backend/exemploAPIVendas/exemploAPIVendas.csproj'
-    arguments: '--configuration $(buildConfiguration) -r win-x64 --self-contained false --output $(Build.ArtifactStagingDirectory)/ApiPublish --no-build'
+    arguments: '--configuration $(buildConfiguration) -r win-x64 --self-contained false --output $(Build.ArtifactStagingDirectory)/ApiPublish'
     zipAfterPublish: false
-
+    
 # ================= SALVAR ARTEFATOS PARA DEPLOY =================
 - script: |
     DIST_ROOT="$(Build.SourcesDirectory)/Frontend/dist"
