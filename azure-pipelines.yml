@@ -40,30 +40,28 @@ steps:
   displayName: 'Frontend: Compilar o projeto Angular'
 
 # ================= PIPELINE DO BACKEND (.NET 10) =================
-# CORREÇÃO: Removido -r win-x64 da restauração da solução inteira
 - task: DotNetCoreCLI@2
   displayName: 'Backend: Restaurar dependências'
   inputs:
     command: 'restore'
     projects: 'Backend/exemploAPIVendas.slnx'
 
-# CORREÇÃO: Removido -r win-x64 da compilação da solução inteira
 - task: DotNetCoreCLI@2
   displayName: 'Backend: Compilar API'
   inputs:
     command: 'build'
     projects: 'Backend/exemploAPIVendas.slnx'
-    arguments: '--configuration $(buildConfiguration)'
+    arguments: '--configuration $(buildConfiguration) --no-restore'
 
 - task: DotNetCoreCLI@2
   displayName: 'Backend: Executar testes'
   inputs:
     command: 'test'
     projects: 'Backend/exemploAPIVendas.slnx'
-    arguments: '--configuration $(buildConfiguration) --no-build'
+    arguments: '--configuration $(buildConfiguration) --no-build --no-restore'
   condition: always()
 
-# MANTIDO: O runtime win-x64 é aplicado exclusivamente no arquivo .csproj do projeto executável final
+# ALTERADO: Habilitado o zipAfterPublish para True para gerar automaticamente o zip do Backend
 - task: DotNetCoreCLI@2
   displayName: 'Backend: Publicar para Deploy'
   inputs:
@@ -71,9 +69,9 @@ steps:
     publishWebProjects: false
     projects: 'Backend/exemploAPIVendas/exemploAPIVendas.csproj'
     arguments: '--configuration $(buildConfiguration) -r win-x64 --self-contained false --output $(Build.ArtifactStagingDirectory)/ApiPublish'
-    zipAfterPublish: false
+    zipAfterPublish: true
     
-# ================= SALVAR ARTEFATOS PARA DEPLOY =================
+# ================= COMPACTAR E SALVAR ARTEFATOS PARA DEPLOY =================
 - script: |
     DIST_ROOT="$(Build.SourcesDirectory)/Frontend/dist"
     PROJECT_DIST=$(find "$DIST_ROOT" -mindepth 1 -maxdepth 2 -type d | head -n 1)
@@ -82,16 +80,28 @@ steps:
     echo "##vso[task.setvariable variable=detectedAngularDist]$PROJECT_DIST"
   displayName: 'Mapear Pasta Raiz do Angular'
 
+# ADICIONADO: Compactar os arquivos gerados do Frontend em um arquivo .zip
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(detectedAngularDist)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/FrontendPublish/frontend.zip'
+    replaceExistingArchive: true
+  displayName: 'Frontend: Compactar arquivos para ZIP'
+
+# ALTERADO: PathtoPublish modificado para apontar para o arquivo .zip gerado do Frontend
 - task: PublishBuildArtifacts@1
   inputs:
-    PathtoPublish: '$(detectedAngularDist)'
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/FrontendPublish/frontend.zip'
     ArtifactName: 'frontend-drop'
     publishLocation: 'Container'
-  displayName: 'Publicar Artefato: Frontend'
+  displayName: 'Publicar Artefato: Frontend (ZIP)'
 
+# ALTERADO: PathtoPublish modificado para apontar para o arquivo .zip gerado automaticamente pelo Publish do .NET
 - task: PublishBuildArtifacts@1
   inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)/ApiPublish'
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/ApiPublish/exemploAPIVendas.zip'
     ArtifactName: 'backend-drop'
     publishLocation: 'Container'
-  displayName: 'Publicar Artefato: Backend'
+  displayName: 'Publicar Artefato: Backend (ZIP)'
